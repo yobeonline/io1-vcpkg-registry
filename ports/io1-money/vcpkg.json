@@ -1,0 +1,17 @@
+{
+  "name": "io1-money",
+  "version": "0.1.0",
+  "homepage": "https://github.com/yobeonline/io1-money",
+  "description": "A C++ class to hold money amounts.",
+  "license": "LGPL-2.1",
+  "dependencies": [
+    {
+      "name": "vcpkg-cmake",
+      "host": true
+    },
+    {
+      "name": "vcpkg-cmake-config",
+      "host": true
+    }
+  ]
+}

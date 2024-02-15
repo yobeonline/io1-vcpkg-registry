@@ -1,0 +1,4 @@
+io1-money can be used from CMake via:
+
+    find_package(io1 COMPONENTS money)
+    target_link_libraries(main PRIVATE io1::money)

@@ -1,0 +1,59 @@
+name: unit tests
+on: [push]
+
+jobs:
+  unit-tests:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+
+        triplet: [x64-windows, x64-windows-static, x64-linux]
+        os: [ubuntu-latest, windows-latest]
+        compiler: [gcc, clang, msvc]
+        config: [Debug, Release]
+        exclude:
+          - os: windows-latest
+            compiler: gcc
+          - os: windows-latest
+            compiler: clang
+          - os: ubuntu-latest
+            compiler: msvc
+          - os: windows-latest
+            triplet: x64-linux
+          - os: ubuntu-latest
+            triplet: x64-windows
+          - os: ubuntu-latest
+            triplet: x64-windows-static
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get latest cmake
+        uses: lukka/get-cmake@latest
+        
+      - name: Set environment
+        shell: cmake -P {0}
+        run: |
+          if (NOT "${{ matrix.compiler }}" STREQUAL "msvc")
+            if ("${{ matrix.compiler }}" STREQUAL "gcc")
+              file(APPEND $ENV{GITHUB_ENV} "CC=gcc-13\n")
+              file(APPEND $ENV{GITHUB_ENV} "CXX=g++-13\n")
+            else()
+              file(APPEND $ENV{GITHUB_ENV} "CC=clang-15\n")
+              file(APPEND $ENV{GITHUB_ENV} "CXX=clang++-15\n")
+            endif()
+          endif()
+      
+      - name: Windows Install and Configure
+        if: matrix.os == 'windows-latest'
+        run: |
+          & "$Env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install io1-money --triplet ${{ matrix.triplet }} --overlay-ports=ports
+          cmake -S tests -B build -D CMAKE_BUILD_TYPE=${{ matrix.config }} -D VCPKG_TARGET_TRIPLET=${{ matrix.triplet }} --toolchain "$Env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
+        
+      - name: Ubuntu Install and Configure
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          $VCPKG_INSTALLATION_ROOT/vcpkg install io1-money --triplet ${{ matrix.triplet }} --overlay-ports=ports
+          cmake -S tests -B build -D CMAKE_BUILD_TYPE=${{ matrix.config }} -D VCPKG_TARGET_TRIPLET=${{ matrix.triplet }} --toolchain "$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
+
+      - name: Build
+        run: cmake --build build --config ${{ matrix.config }} --parallel
